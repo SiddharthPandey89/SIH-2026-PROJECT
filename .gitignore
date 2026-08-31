@@ -62,6 +62,12 @@ models/embedding/*
 !models/ocr/.gitkeep
 !models/embedding/.gitkeep
 
+# Keep Mistral 7B engine source; weights stay ignored
+!models/llm/mistral-7b/
+models/llm/mistral-7b/**
+!models/llm/mistral-7b/**/
+!models/llm/mistral-7b/**/*.py
+
 # =========================
 # Uploaded / Generated Data
 # =========================

@@ -44,3 +44,15 @@ chromadb>=1.0,<2.0
 # Local embedding / semantic search
 # ---------------------------------------------------------
 sentence-transformers>=3.0,<6.0
+
+# ---------------------------------------------------------
+# Local in-process Mistral 7B (transformers path)
+# Install a CUDA wheel of torch when a GPU is available.
+# ---------------------------------------------------------
+torch>=2.2,<3.0
+transformers>=4.40,<5.0
+accelerate>=0.30,<2.0
+safetensors>=0.4,<1.0
+
+# Optional: GGUF / llama.cpp backend for CPU-friendly Mistral weights
+# llama-cpp-python>=0.2.90,<0.4

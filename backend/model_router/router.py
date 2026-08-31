@@ -47,8 +47,11 @@ infrastructure-level network guard (backend/security/network_guard.py).
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import logging
+import sys
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Dict, List, Optional, TypedDict
 
 import httpx
@@ -197,24 +200,73 @@ class OpenAICompatibleAdapter(InferenceAdapter):
             return False
 
 
+def _load_mistral_component():
+    """
+    Load models/llm/mistral-7b/ as a package. The directory name contains a
+    hyphen, so it cannot be imported with a normal dotted path.
+    """
+    package_name = "sih_mistral_7b"
+    existing = sys.modules.get(package_name)
+    if existing is not None:
+        return existing
+
+    package_dir = Path(__file__).resolve().parents[2] / "models" / "llm" / "mistral-7b"
+    init_file = package_dir / "__init__.py"
+    if not init_file.is_file():
+        raise AdapterNotConfiguredError(
+            f"Mistral 7B component was not found at '{package_dir}'."
+        )
+
+    spec = importlib.util.spec_from_file_location(
+        package_name,
+        init_file,
+        submodule_search_locations=[str(package_dir)],
+    )
+    if spec is None or spec.loader is None:
+        raise AdapterNotConfiguredError("Could not create an import spec for the Mistral 7B component.")
+
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[package_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _is_mistral_model(model: ModelConfig) -> bool:
+    if model.model_id == "mistral-7b":
+        return True
+    name = (model.backend_model_name or "").lower()
+    path = (model.weights_path or "").replace("\\", "/").lower()
+    return "mistral-7b" in name or "mistral-7b" in path
+
+
 class TransformersAdapter(InferenceAdapter):
     """
-    Placeholder for in-process (no HTTP server) inference via the
-    `transformers` library -- relevant for vision/embedding models that may
-    be loaded directly in the backend process rather than served over HTTP.
+    In-process inference via local model components.
 
-    Intentionally NOT implemented here: loading real weights is out of
-    scope for this file. This class exists so ModelBackend.TRANSFORMERS is
-    a first-class, addressable backend in the adapter map -- wiring in a
-    real implementation later requires no changes to ModelRouter.
+    Mistral 7B is implemented in models/llm/mistral-7b/. This adapter only
+    dispatches to that component; it does not contain routing or model
+    selection logic.
     """
 
+    def __init__(self) -> None:
+        self._mistral_adapter = None
+
+    def _mistral_adapter_instance(self):
+        if self._mistral_adapter is None:
+            component = _load_mistral_component()
+            self._mistral_adapter = component.Mistral7BInferenceAdapter()
+        return self._mistral_adapter
+
     async def generate(self, model: ModelConfig, messages: List[Dict[str, str]], timeout: float) -> str:
+        if _is_mistral_model(model):
+            return await self._mistral_adapter_instance().generate(model, messages, timeout)
         raise NotImplementedError(
-            f"In-process transformers inference is not yet implemented for model '{model.model_id}'."
+            f"In-process transformers inference is not implemented for model '{model.model_id}'."
         )
 
     async def health_check(self, model: ModelConfig, timeout: float) -> bool:
+        if _is_mistral_model(model):
+            return await self._mistral_adapter_instance().health_check(model, timeout)
         return False
 
 

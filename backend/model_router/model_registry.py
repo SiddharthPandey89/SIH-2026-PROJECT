@@ -253,6 +253,14 @@ class ModelRegistry:
 
 _OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
+try:
+    from backend.config import MISTRAL_MODEL_PATH as _MISTRAL_MODEL_PATH
+except ImportError:
+    _MISTRAL_MODEL_PATH = os.getenv(
+        "MISTRAL_MODEL_PATH",
+        "models/llm/mistral-7b/weights",
+    )
+
 
 # ---------------------------------------------------------------------------
 # Seed data: models available in the local Ollama installation
@@ -323,6 +331,31 @@ def _build_default_models() -> List[ModelConfig]:
             approx_vram_gb=1.5,
             priority=30,
             notes="Small lightweight fallback model for simple text tasks.",
+        ),
+        ModelConfig(
+            model_id="mistral-7b",
+            display_name="Mistral 7B Instruct",
+            backend=ModelBackend.TRANSFORMERS,
+            modality=Modality.TEXT,
+            endpoint="local://in-process",
+            backend_model_name="mistral-7b-instruct",
+            weights_path=_MISTRAL_MODEL_PATH,
+            supported_tasks=[
+                TASK_CHAT,
+                TASK_CODE,
+                TASK_DOCUMENT_QA,
+                TASK_SUMMARIZATION,
+                TASK_GENERAL,
+                TASK_SPREADSHEET,
+            ],
+            context_window=8192,
+            quantization=os.getenv("MISTRAL_QUANTIZATION"),
+            approx_vram_gb=14.0,
+            priority=15,
+            notes=(
+                "Local in-process Mistral 7B Instruct. Weights are loaded from "
+                "MISTRAL_MODEL_PATH; no HTTP model server is required."
+            ),
         ),
         ModelConfig(
             model_id="llama3.2-latest",
