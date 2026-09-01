@@ -1,0 +1,93 @@
+# =========================
+# Environment / Secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+venv/
+env/
+ENV/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Node / Frontend
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# =========================
+# Large AI Models
+# =========================
+models/llm/*
+models/vision/*
+models/ocr/*
+models/embedding/*
+
+# Keep folder structure in Git
+!models/llm/.gitkeep
+!models/vision/.gitkeep
+!models/ocr/.gitkeep
+!models/embedding/.gitkeep
+
+# =========================
+# Uploaded / Generated Data
+# =========================
+data/uploads/*
+data/sandbox/*
+data/outputs/*
+
+# Keep folder structure in Git
+!data/uploads/scanned_pdfs/.gitkeep
+!data/uploads/drawings/.gitkeep
+!data/uploads/images/.gitkeep
+!data/sandbox/.gitkeep
+!data/outputs/.gitkeep
+
+# =========================
+# Large / Temporary Files
+# =========================
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.bak
