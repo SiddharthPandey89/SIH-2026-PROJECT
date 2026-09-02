@@ -2,12 +2,18 @@ import requests
 
 BACKEND_URL = "http://localhost:8000"
 
-def send_chat_message(prompt, session_id="default"):
-    """POST /chat endpoint ko message bhejta hai."""
+def send_chat_message(prompt, session_id="default", file_id=None):
     try:
+        payload = {
+            "message": prompt,
+            "conversation_id": session_id
+        }
+        if file_id:
+            payload["file_id"] = file_id
+
         response = requests.post(
-            f"{BACKEND_URL}/chat", 
-            json={"prompt": prompt, "session_id": session_id},
+            f"{BACKEND_URL}/api/chat",
+            json=payload,
             timeout=10
         )
         return response.json()
@@ -17,11 +23,3 @@ def send_chat_message(prompt, session_id="default"):
             "model_used": "Mock Local Engine",
             "error": str(e)
         }
-
-def check_system_health():
-    """GET /health endpoint check karta hai."""
-    try:
-        response = requests.get(f"{BACKEND_URL}/health", timeout=2)
-        return response.json()
-    except Exception:
-        return {"status": "offline"}
