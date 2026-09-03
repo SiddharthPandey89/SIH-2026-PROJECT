@@ -36,8 +36,11 @@ async def post_chat(
 ) -> ChatResponse:
     message = payload.message.strip()
     if not message:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "`message` must not be empty.")
-
+    
+        raise HTTPException(
+            status_code=400,
+            detail="`message` must not be empty.",
+        )    
     # Resolve or create the conversation
     conversation_id = payload.conversation_id
     try:
