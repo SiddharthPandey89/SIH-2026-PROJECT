@@ -475,13 +475,18 @@ def write_xlsx(
         # This catches corrupt/incomplete ZIP-based XLSX output before success
         # is reported to callers.
         from openpyxl import load_workbook
+        verified_wb = None
         try:
-            with load_workbook(resolved_path, read_only=True, data_only=False) as verified_wb:
-                if not verified_wb.sheetnames:
-                    return _error_result(
-                        str(resolved_path),
-                        "Generated XLSX contains no worksheets.",
-                    )
+            verified_wb = load_workbook(
+                resolved_path,
+                read_only=True,
+                data_only=False,
+            )
+            if not verified_wb.sheetnames:
+                return _error_result(
+                    str(resolved_path),
+                    "Generated XLSX contains no worksheets.",
+                )
         except Exception as exc:
             try:
                 resolved_path.unlink(missing_ok=True)
@@ -491,6 +496,9 @@ def write_xlsx(
                 str(resolved_path),
                 f"Generated XLSX failed integrity verification: {type(exc).__name__}",
             )
+        finally:
+            if verified_wb is not None:
+                verified_wb.close()
 
         return _success_result(str(resolved_path))
 
