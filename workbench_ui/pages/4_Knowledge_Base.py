@@ -1,26 +1,30 @@
 import streamlit as st
+import requests
 
-st.set_page_config(page_title="4. Knowledge Base | Sovereign AI", layout="wide")
+st.set_page_config(page_title="Knowledge Base", layout="wide")
 
-st.title("4. Knowledge Base")
-st.caption("Browse and search your indexed documents.")
+st.title("📚 Knowledge Base Management")
+st.markdown("View and manage indexed documents in the local Vector Database.")
 
-st.text_input("🔍 Search documents...", placeholder="Type keywords to query local vector store...")
+st.subheader("Indexed Documents")
 
-docs = [
-    {"title": "AI_Research_Paper.pdf", "desc": "This paper discusses the advancements in AI...", "tag": "AI", "time": "PDF • Uploaded Just now"},
-    {"title": "Handwritten_Notes.jpg", "desc": "These are the notes from the lecture on...", "tag": "Notes", "time": "JPG • Uploaded 5 mins ago"},
-    {"title": "Meeting_Summary.txt", "desc": "Summary of the project meeting held on...", "tag": "Meeting", "time": "TXT • Uploaded 1 hour ago"},
-    {"title": "Project_Overview.pdf", "desc": "This document provides an overview of the...", "tag": "Project", "time": "PDF • Uploaded yesterday"},
-    {"title": "Design_Diagram.png", "desc": "System architecture diagram.", "tag": "Design", "time": "PNG • Uploaded yesterday"}
-]
+# Backend se documents fetch karne ka layout
+try:
+    response = requests.get("http://localhost:8000/api/documents")
+    if response.status_code == 200:
+        docs = response.json()
+        if docs:
+            st.dataframe(docs, use_container_width=True)
+        else:
+            st.info("No documents indexed yet. Upload files from the 'Document Upload' page.")
+    else:
+        st.info("Knowledge Base ready. Upload documents to populate vector indices.")
+except Exception as e:
+    st.warning("Could not fetch document list from backend. Showing local status.")
 
-for d in docs:
-    st.markdown(f"""
-    <div style="background: #181c28; border: 1px solid #23293a; border-radius: 10px; padding: 14px; margin-bottom: 10px;">
-        <span style="color: #6366f1; font-weight: bold;">📑 {d['title']}</span>
-        <span style="float: right; background: #6366f122; color: #818cf8; padding: 2px 8px; border-radius: 10px; font-size: 11px;">{d['tag']}</span>
-        <p style="color: #94a3b8; font-size: 13px; margin: 4px 0;">{d['desc']}</p>
-        <small style="color: #64748b;">{d['time']}</small>
-    </div>
-    """, unsafe_allow_html=True)
+st.divider()
+st.subheader("Vector Store Info")
+col1, col2, col3 = st.columns(3)
+col1.metric(label="Embedding Model", value="BAAI/bge-small-en-v1.5")
+col2.metric(label="Vector Store", value="ChromaDB (Local)")
+col3.metric(label="Chunk Size", value="512 tokens")
