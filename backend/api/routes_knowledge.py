@@ -1,4 +1,4 @@
-"""
+git"""
 backend/api/routes_knowledge.py
 
 Knowledge Base API controller.
@@ -28,6 +28,7 @@ from backend.api.routes_upload import (
 )
 from backend.api.schemas import BaseSchema, SourceReference
 from backend.knowledge_base.ingestion import STATUS_SUCCESS, ingest_file
+from backend.multimodel.pdf_parser import PDFParser
 from backend.knowledge_base.vector_store import get_vector_store
 from backend.knowledge_base.retriever import Retriever, get_retriever
 
@@ -69,6 +70,21 @@ class KnowledgeIngestResponse(BaseSchema):
     chunk_count: int
     indexed_count: int = 0
     error: Optional[str] = None
+class KnowledgeParseRequest(BaseSchema):
+    file_id: str
+
+
+class KnowledgeParseResponse(BaseSchema):
+    success: bool
+    status: str
+    file_id: str
+    filename: str
+    page_count: int
+    requires_ocr: bool
+    ocr_pages: List[int]
+    pages: List[dict]
+    metadata: dict
+    error: Optional[str] = None    
 
 
 class KnowledgeDocumentsResponse(BaseSchema):
@@ -115,7 +131,71 @@ async def ingest_document(
                 "Provide only one of 'source_path' or 'file_id', not both."
             ),
         )
+@router.post(
+    "/parse",
+    response_model=KnowledgeParseResponse,
+)
+async def parse_uploaded_document(
+    payload: KnowledgeParseRequest,
+) -> KnowledgeParseResponse:
+    """
+    Parse a previously uploaded PDF using the existing PDFParser.
 
+    This endpoint does not perform BGE-M3 embedding or ChromaDB indexing.
+    """
+
+    meta_path = _find_upload_meta_path(payload.file_id)
+
+    if meta_path is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                f"No uploaded file found with "
+                f"file_id='{payload.file_id}'."
+            ),
+        )
+
+    try:
+        record = _read_upload_metadata(meta_path)
+    except Exception:
+        logger.exception(
+            "Failed to read upload metadata for file_id='%s'.",
+            payload.file_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to read uploaded file metadata.",
+        )
+
+    target_path = _upload_file_path(
+        meta_path.parent.name,
+        payload.file_id,
+        record.get("extension", ""),
+    )
+
+    parser = PDFParser()
+    result = parser.parse(target_path)
+
+    return KnowledgeParseResponse(
+        success=result.success,
+        status=result.status,
+        file_id=payload.file_id,
+        filename=result.filename,
+        page_count=result.page_count,
+        requires_ocr=result.requires_ocr,
+        ocr_pages=result.ocr_pages,
+        pages=[
+            {
+                "page_number": page.page_number,
+                "text": page.text,
+                "has_text": page.has_text,
+                "requires_ocr": page.requires_ocr,
+            }
+            for page in result.pages
+        ],
+        metadata=result.metadata,
+        error=result.error,
+    )
     # -----------------------------------------------------------------------
     # Resolve uploaded file_id -> actual filesystem path
     # -----------------------------------------------------------------------

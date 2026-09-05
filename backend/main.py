@@ -34,6 +34,7 @@ from backend.api.routes_chat import router as chat_router
 from backend.api.routes_upload import router as upload_router
 from backend.database.init_db import dispose_engine, init_db
 from backend.api.routes_knowledge import router as knowledge_router
+from backend.api.routes_agent import router as agent_router
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO").upper(),
@@ -80,6 +81,7 @@ app = FastAPI(
 app.include_router(chat_router)
 app.include_router(upload_router)
 app.include_router(knowledge_router)
+app.include_router(agent_router)
 
 
 @app.get("/", tags=["Meta"], summary="Basic service info")

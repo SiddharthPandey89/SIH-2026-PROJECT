@@ -58,7 +58,7 @@ class ChatRequest(BaseSchema):
 
     message: str = Field(
         ...,
-        min_length=1,
+        
         max_length=8000,
         description="The user's message for this turn.",
         examples=["Summarize the key findings in the attached inspection report."],
@@ -75,12 +75,7 @@ class ChatRequest(BaseSchema):
         examples=["file_20260828_0007"],
     )
 
-    @field_validator("message")
-    @classmethod
-    def message_must_not_be_blank(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("message must not be empty or whitespace-only.")
-        return value.strip()
+   
 
     @field_validator("conversation_id", "file_id")
     @classmethod
