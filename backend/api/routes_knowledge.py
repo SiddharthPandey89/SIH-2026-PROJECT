@@ -1,4 +1,4 @@
-"""
+git"""
 backend/api/routes_knowledge.py
 
 Knowledge Base API controller.
